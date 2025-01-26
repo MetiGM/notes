@@ -67,24 +67,20 @@ jobs:
         ports:
           - 8080:8080
         env:
-          ZAP_API_KEY: ""  # Disable API key authentication
-          ZAP_API_ADDR: "0.0.0.0"  # Allow connections from any IP
-          ZAP_API_ALLOW_INTERFACE: ".*"  # Regex to permit all interfaces
+          ZAP_API_KEY: ""
+          ZAP_API_ADDR: "0.0.0.0"
+          ZAP_API_ALLOW_INTERFACE: ".*"
         options: >-
           --cpus="2.0"
           --memory="4g"
-          --health-cmd="curl -f http://localhost:8080/JSON/core/view/version || exit 1"
-          --health-interval=10s
-          --health-retries=10
-          --health-start-period=60s
-          --health-timeout=5s
+          --health-cmd="curl -sSf http://localhost:8080/JSON/core/view/version >/dev/null || exit 1"
+          --health-interval=15s
+          --health-retries=15
+          --health-start-period=180s
+          --health-timeout=10s
 
     steps:
       - uses: actions/checkout@v4
-
-      - name: Log in to GitHub Container Registry
-        run: |
-          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -97,10 +93,16 @@ jobs:
           SECRET_KEY: ${{ secrets.SECRET_KEY }}
         run: |
           flask run --host=0.0.0.0 --port=5000 &
-          echo "Waiting for application startup..."
-          curl --retry 10 --retry-delay 5 --retry-connrefused http://localhost:5000
+          echo "Waiting for Flask startup..."
+          curl --retry 15 --retry-delay 5 --retry-connrefused http://localhost:5000
 
-      - name: Run OWASP ZAP scan
+      - name: Verify ZAP API availability
+        timeout-minutes: 5
+        run: |
+          echo "Waiting for ZAP API to become ready..."
+          curl --retry 15 --retry-delay 10 --retry-all-errors http://localhost:8080/JSON/core/view/version
+
+      - name: Run OWASP ZAP full scan
         uses: zaproxy/action-full-scan@v0.6.0
         with:
           target: 'http://host.docker.internal:5000'
@@ -116,15 +118,14 @@ jobs:
           name: zap-results
           path: zap-results.json
 
-      - name: Debug ZAP container logs
+      - name: Debug ZAP container
         if: failure()
         run: |
           docker ps -a
           CONTAINER_ID=$(docker ps -a -q --filter "ancestor=ghcr.io/zaproxy/zaproxy:stable")
           if [ -n "$CONTAINER_ID" ]; then
+            docker inspect $CONTAINER_ID
             docker logs $CONTAINER_ID
-          else
-            echo "No ZAP container found."
           fi
 
       - name: Shutdown Flask app
