@@ -1,0 +1,45 @@
+name: CI/CD Pipeline
+
+on: [push, pull_request]
+
+env:
+  SECRET_KEY: ${{ secrets.SECRET_KEY }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.x'
+
+    - name: Install dependencies
+      run: |
+        pip install -r requirements.txt
+
+    - name: Run unit tests
+      run: pytest test/
+
+    - name: Static analysis with Bandit
+      run: bandit -r .
+
+    - name: Dynamic analysis with OWASP ZAP
+      run: |
+        flask run --host=0.0.0.0 --port=5000 &
+        echo "Waiting for app to start..."
+        for i in {1..10}; do
+          if curl -s http://localhost:5000 >/dev/null; then
+            break
+          fi
+          sleep 2
+        done
+        docker run --network="host" owasp/zap2docker-stable zap-baseline.py \
+          -t http://localhost:5000 -J -l WARN
+        if [ $? -eq 2 ]; then
+          echo "ZAP found vulnerabilities!"
+          exit 1
+        fi
