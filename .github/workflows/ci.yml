@@ -67,12 +67,12 @@ jobs:
         ports:
           - 8080:8080
         options: >-
-          --cpus="1.0"
-          --memory="2g"
+          --cpus="2.0"
+          --memory="4g"
           --health-cmd="curl -f http://localhost:8080 || exit 1"
           --health-interval=10s
           --health-retries=10
-          --health-start-period=10s
+          --health-start-period=30s
           --health-timeout=5s
 
     steps:
@@ -93,7 +93,7 @@ jobs:
           curl --retry 10 --retry-delay 5 --retry-connrefused http://localhost:5000
 
       - name: Wait for ZAP to initialize
-        run: sleep 60
+        run: sleep 120
 
       - name: Run OWASP ZAP scan
         uses: zaproxy/action-full-scan@v0.6.0
@@ -114,7 +114,8 @@ jobs:
       - name: Debug ZAP container logs
         if: failure()
         run: |
-          docker logs zap
+          docker ps -a
+          docker logs $(docker ps -a -q --filter "ancestor=ghcr.io/zaproxy/zaproxy:stable")
 
       - name: Shutdown Flask app
         if: always()
