@@ -5,7 +5,7 @@ import pytest
 # Add project root to Python path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from app import app
+from app import app, init_db  # Explicitly import init_db
 
 @pytest.fixture
 def client():
@@ -18,8 +18,10 @@ def client():
     
     with app.test_client() as client:
         with app.app_context():
-            init_db()
+            init_db()  # Now properly imported
         yield client
+
+
 
 def test_save_note(client):
     response = client.post('/', data={
