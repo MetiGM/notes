@@ -5,7 +5,9 @@ import os
 from flask_wtf.csrf import CSRFProtect
 
 from dotenv import load_dotenv
-load_dotenv()
+load_dotenv()  # Loads from .env file
+
+app.secret_key = os.environ.get('SECRET_KEY')
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY')
@@ -26,6 +28,8 @@ def init_db():
         ''')
         conn.commit()
 
+
+
 @app.route('/', methods=['GET', 'POST'])
 def index():
     if request.method == 'POST':
@@ -36,14 +40,14 @@ def index():
             flash('Title and content are required!', 'danger')
             return redirect(url_for('index'))
         
-        with sqlite3.connect(DATABASE) as conn:
+        with sqlite3.connect(DATABASE, uri=True) as conn:
             conn.execute('INSERT INTO notes (title, content) VALUES (?, ?)', (title, content))
             conn.commit()
         
         flash('Note saved successfully!', 'success')
         return redirect(url_for('index'))
     
-    with sqlite3.connect(DATABASE) as conn:
+    with sqlite3.connect(DATABASE, uri=True) as conn:
         notes = conn.execute('''
             SELECT id, title, content, created_at 
             FROM notes 
@@ -62,7 +66,7 @@ def edit_note(note_id):
             flash('Title and content are required!', 'danger')
             return redirect(url_for('index'))
         
-        with sqlite3.connect(DATABASE) as conn:
+        with sqlite3.connect(DATABASE, uri=True) as conn:
             conn.execute('UPDATE notes SET title=?, content=? WHERE id=?', 
                         (title, content, note_id))
             conn.commit()
@@ -70,7 +74,7 @@ def edit_note(note_id):
         flash('Note updated successfully!', 'success')
         return redirect(url_for('index'))
     
-    with sqlite3.connect(DATABASE) as conn:
+    with sqlite3.connect(DATABASE, uri=True) as conn:
         note = conn.execute('''
             SELECT id, title, content 
             FROM notes 
@@ -85,7 +89,7 @@ def edit_note(note_id):
 
 @app.route('/delete/<int:note_id>')
 def delete_note(note_id):
-    with sqlite3.connect(DATABASE) as conn:
+    with sqlite3.connect(DATABASE, uri=True) as conn:
         conn.execute('DELETE FROM notes WHERE id=?', (note_id,))
         conn.commit()
     

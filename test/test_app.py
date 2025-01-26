@@ -10,15 +10,16 @@ from app import app, init_db  # Explicitly import init_db
 @pytest.fixture
 def client():
     """Configure app for testing"""
+    app.secret_key = 'test-secret-key'
     app.config.update({
         'TESTING': True,
         'WTF_CSRF_ENABLED': False,
-        'DATABASE': ':memory:'
+        'DATABASE': 'file::memory:?cache=shared'  # Use shared DB
     })
     
     with app.test_client() as client:
         with app.app_context():
-            init_db()  # Now properly imported
+            init_db()
         yield client
 
 
