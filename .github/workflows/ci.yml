@@ -1,25 +1,21 @@
-name: Security Pipeline
+name: Security-First CI/CD Pipeline
 
-on: [push, pull_request]
+on:
+  push:
+    branches: [main]
+  pull_request:
 
 env:
-  SECRET_KEY: ${{ secrets.SECRET_KEY }}
   FLASK_APP: app.py
   DATABASE: ':memory:'
 
 jobs:
-  security-checks:
+  build-and-test:
     runs-on: ubuntu-latest
-    services:
-      zap:
-        image: owasp/zap2docker-stable
-        ports:
-          - 8080:8080
-
     steps:
     - uses: actions/checkout@v4
 
-    - name: Set up Python
+    - name: Set up Python 3.12
       uses: actions/setup-python@v4
       with:
         python-version: '3.12'
@@ -29,30 +25,80 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
 
-    - name: Run tests
-      run: pytest test/ --verbose
+    - name: Run unit tests
+      env:
+        SECRET_KEY: ${{ secrets.SECRET_KEY }}
+      run: |
+        pytest tests/ --cov=app --cov-report=xml
 
-    - name: Static analysis (Bandit)
-      run: bandit -r app.py -f json -o bandit-results.json
+    - name: Upload coverage report
+      uses: actions/upload-artifact@v4
+      with:
+        name: coverage-report
+        path: coverage.xml
 
-    - name: Dynamic analysis (OWASP ZAP)
+  static-analysis:
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+
+    - name: Run Bandit security scan
+      run: |
+        pip install bandit
+        bandit -r app.py -f json -o bandit-results.json
+
+    - name: Upload Bandit results
+      uses: actions/upload-artifact@v4
+      with:
+        name: bandit-report
+        path: bandit-results.json
+
+  dynamic-analysis:
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    services:
+      zap:
+        image: ghcr.io/zaproxy/zaproxy:stable
+        ports:
+          - 8080:8080
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+
+    - name: Install dependencies
+      run: pip install -r requirements.txt
+
+    - name: Start Flask application
+      env:
+        SECRET_KEY: ${{ secrets.SECRET_KEY }}
       run: |
         flask run --host=0.0.0.0 --port=5000 &
-        echo "Waiting for app to start..."
-        for i in {1..10}; do
-          if curl -s http://localhost:5000 >/dev/null; then
-            echo "App is running!"
-            break
-          fi
-          sleep 2
-        done
-        docker run --network="host" owasp/zap2docker-stable zap-baseline.py \
-          -t http://localhost:5000 -J -l PASS -r zap-report.json
+        echo "Waiting for application startup..."
+        curl --retry 10 --retry-delay 5 --retry-connrefused http://localhost:5000
 
-    - name: Upload reports
-      uses: actions/upload-artifact@v3
+    - name: Run OWASP ZAP scan
+      uses: zaproxy/action-full-scan@v0.6.0
       with:
-        name: security-reports
-        path: |
-          bandit-results.json
-          zap-report.json
+        target: 'http://localhost:5000'
+        cmd_options: >
+          -c "scan.rules=40012,40026"
+          -J
+          -r zap-results.json
+        fail_action: false
+
+    - name: Upload ZAP results
+      uses: actions/upload-artifact@v4
+      with:
+        name: zap-results
+        path: zap-results.json
+
+    - name: Shutdown Flask app
+      if: always()
+      run: pkill -f "flask run" || true
