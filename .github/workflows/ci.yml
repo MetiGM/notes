@@ -71,14 +71,14 @@ jobs:
           --memory="4g"
           --health-cmd="curl -sSf http://localhost:8080/JSON/core/view/version >/dev/null || exit 1"
           --health-interval=30s
-          --health-retries=5
-          --health-start-period=60s
-          --health-timeout=10s
+          --health-retries=15
+          --health-start-period=300s
+          --health-timeout=20s
           -e ZAP_PORT=8080
           -e ZAP_HOST=0.0.0.0
           -e ZAP_API_ADDR=0.0.0.0
           -e ZAP_API_ALLOW_INTERFACE=.*
-          -- /zap/zap.sh -daemon -host 0.0.0.0 -port 8080 -config api.disablekey=true
+          -e API_DISABLEKEY=true
 
     steps:
       - uses: actions/checkout@v4
@@ -101,7 +101,7 @@ jobs:
         timeout-minutes: 5
         run: |
           echo "Waiting for ZAP API to become ready..."
-          curl --retry 10 --retry-delay 15 --retry-all-errors \
+          curl --retry 20 --retry-delay 15 --retry-all-errors \
             "http://localhost:8080/JSON/core/view/version"
 
       - name: Run OWASP ZAP full scan
