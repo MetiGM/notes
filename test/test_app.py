@@ -1,3 +1,4 @@
+import sqlite3
 import sys
 import os
 import pytest
@@ -14,13 +15,20 @@ def client():
     app.config.update({
         'TESTING': True,
         'WTF_CSRF_ENABLED': False,
-        'DATABASE': 'file::memory:?cache=shared'  # Use shared DB
+        'DATABASE': 'file:testing?mode=memory&cache=shared'  # Match workflow URI
     })
+    
+    # Create persistent connection
+    conn = sqlite3.connect(app.config['DATABASE'], uri=True)
+    conn.execute('PRAGMA foreign_keys = ON')
     
     with app.test_client() as client:
         with app.app_context():
             init_db()
         yield client
+    
+    # Cleanup after tests
+    conn.close()
 
 
 

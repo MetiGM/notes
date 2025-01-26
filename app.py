@@ -18,7 +18,7 @@ app.secret_key = os.environ.get('SECRET_KEY')
 
 def init_db():
     """Initialize database with proper connection handling"""
-    with sqlite3.connect(DATABASE) as conn:
+    with sqlite3.connect(DATABASE, uri=True) as conn:
         c = conn.cursor()
         c.execute('''
             CREATE TABLE IF NOT EXISTS notes (
