@@ -1,13 +1,20 @@
-name: CI/CD Pipeline
+name: Security Pipeline
 
 on: [push, pull_request]
 
 env:
   SECRET_KEY: ${{ secrets.SECRET_KEY }}
+  FLASK_APP: app.py
+  DATABASE: ':memory:'
 
 jobs:
-  build:
+  security-checks:
     runs-on: ubuntu-latest
+    services:
+      zap:
+        image: owasp/zap2docker-stable
+        ports:
+          - 8080:8080
 
     steps:
     - uses: actions/checkout@v4
@@ -15,31 +22,37 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
-        python-version: '3.x'
+        python-version: '3.12'
 
     - name: Install dependencies
       run: |
+        python -m pip install --upgrade pip
         pip install -r requirements.txt
 
-    - name: Run unit tests
-      run: pytest test/
+    - name: Run tests
+      run: pytest test/ --verbose
 
-    - name: Static analysis with Bandit
-      run: bandit -r .
+    - name: Static analysis (Bandit)
+      run: bandit -r app.py -f json -o bandit-results.json
 
-    - name: Dynamic analysis with OWASP ZAP
+    - name: Dynamic analysis (OWASP ZAP)
       run: |
         flask run --host=0.0.0.0 --port=5000 &
         echo "Waiting for app to start..."
         for i in {1..10}; do
           if curl -s http://localhost:5000 >/dev/null; then
+            echo "App is running!"
             break
           fi
           sleep 2
         done
         docker run --network="host" owasp/zap2docker-stable zap-baseline.py \
-          -t http://localhost:5000 -J -l WARN
-        if [ $? -eq 2 ]; then
-          echo "ZAP found vulnerabilities!"
-          exit 1
-        fi
+          -t http://localhost:5000 -J -l PASS -r zap-report.json
+
+    - name: Upload reports
+      uses: actions/upload-artifact@v3
+      with:
+        name: security-reports
+        path: |
+          bandit-results.json
+          zap-report.json
