@@ -66,6 +66,10 @@ jobs:
         image: ghcr.io/zaproxy/zaproxy:stable
         ports:
           - 8080:8080
+        env:
+          ZAP_API_KEY: ""  # Disable API key authentication
+          ZAP_API_ADDR: "0.0.0.0"  # Allow connections from any IP
+          ZAP_API_ALLOW_INTERFACE: ".*"  # Regex to permit all interfaces
         options: >-
           --cpus="2.0"
           --memory="4g"
@@ -74,7 +78,6 @@ jobs:
           --health-retries=10
           --health-start-period=60s
           --health-timeout=5s
-          -- /zap/zap.sh -daemon -config api.key= -config api.addrs.addr.name=.* -config api.addrs.addr.regex=true
 
     steps:
       - uses: actions/checkout@v4
@@ -100,7 +103,7 @@ jobs:
       - name: Run OWASP ZAP scan
         uses: zaproxy/action-full-scan@v0.6.0
         with:
-          target: 'http://host.docker.internal:5000'  # Use host.docker.internal to access host services
+          target: 'http://host.docker.internal:5000'
           cmd_options: >
             -c "scan.rules=40012,40026"
             -J
