@@ -63,7 +63,7 @@ jobs:
     runs-on: ubuntu-latest
     services:
       zap:
-        image: zaproxy/zap-stable:2.14.0  # Pinned version
+        image: zaproxy/zap-stable:2.14.0
         ports:
           - 8080:8080
         options: >-
@@ -77,6 +77,8 @@ jobs:
           -e ZAP_API_KEY=
           -e ZAP_API_ADDR=0.0.0.0
           -e ZAP_API_ALLOW_INTERFACE=.*
+          -e GITHUB_ACTIONS=true
+          -e CI=true
           -- /zap/zap.sh -daemon -host 0.0.0.0 -port 8080 -config api.key=
 
     steps:
