@@ -63,7 +63,7 @@ jobs:
     runs-on: ubuntu-latest
     services:
       zap:
-        image: ghcr.io/zaproxy/zaproxy:stable
+        image: zaproxy/zap2docker-stable  # Use the lighter image
         ports:
           - 8080:8080
         options: >-
@@ -93,7 +93,7 @@ jobs:
           curl --retry 10 --retry-delay 5 --retry-connrefused http://localhost:5000
 
       - name: Wait for ZAP to initialize
-        run: sleep 300
+        run: sleep 240  
 
       - name: Run OWASP ZAP scan
         uses: zaproxy/action-full-scan@v0.6.0
@@ -115,7 +115,7 @@ jobs:
         if: failure()
         run: |
           docker ps -a
-          docker logs $(docker ps -a -q --filter "ancestor=ghcr.io/zaproxy/zaproxy:stable")
+          docker logs $(docker ps -a -q --filter "ancestor=zaproxy/zap2docker-stable")
 
       - name: Shutdown Flask app
         if: always()
