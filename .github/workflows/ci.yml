@@ -63,7 +63,7 @@ jobs:
     runs-on: ubuntu-latest
     services:
       zap:
-        image: zaproxy/zap:stable
+        image: zaproxy/zap-stable
         ports:
           - 8080:8080
         options: >-
