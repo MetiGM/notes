@@ -1,12 +1,8 @@
-# Python
 __pycache__/
-*.py[cod]
-venv/
+*.pyc
+*.pyo
+*.pyd
 .env
-
-# Database
 notes.db
-
-# IDE
-.vscode/
-.idea/
+venv/
+*.log
