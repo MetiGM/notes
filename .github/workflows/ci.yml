@@ -69,11 +69,14 @@ jobs:
         options: >-
           --cpus="2.0"
           --memory="4g"
-          --health-cmd="curl -sSf http://localhost:8080/JSON/core/view/version >/dev/null  exit 1"
+          --health-cmd="curl -sSf 'http://localhost:8080/JSON/core/view/version?apikey=' >/dev/null || exit 1"
           --health-interval=20s
           --health-retries=20
-          --health-start-period=60s
+          --health-start-period=240s
           --health-timeout=15s
+          -e ZAP_API_KEY=
+          -e ZAP_API_ADDR=0.0.0.0
+          -e ZAP_API_ALLOW_INTERFACE=.*
 
     steps:
       - uses: actions/checkout@v4
@@ -92,23 +95,17 @@ jobs:
           echo "Waiting for Flask startup..."
           curl --retry 15 --retry-delay 5 --retry-connrefused http://localhost:5000
 
-      - name: Wait for Flask to start
-        run: sleep 10
-
       - name: Verify ZAP API availability
         timeout-minutes: 5
         run: |
           echo "Waiting for ZAP API to become ready..."
           curl --retry 20 --retry-delay 15 --retry-all-errors \
-            "http://localhost:8080/JSON/core/view/version"
-
-      - name: Set ZAP Target
-        run: echo "TARGET=$(if [ $RUNNER_OS = 'Linux' ]; then echo 'http://localhost:5000'; else echo 'http://host.docker.internal:5000'; fi)" >> $GITHUB_ENV
+            "http://localhost:8080/JSON/core/view/version?apikey="
 
       - name: Run OWASP ZAP full scan
         uses: zaproxy/action-full-scan@v0.6.0
         with:
-          target: ${{ env.TARGET }}
+          target: 'http://host.docker.internal:5000'
           cmd_options: >
             -c "scan.rules=40012,40026"
             -J
@@ -124,13 +121,19 @@ jobs:
       - name: Debug ZAP container
         if: failure()
         run: |
-          echo "Listing running containers..."
+          echo "Listing containers:"
           docker ps -a
-          echo "Inspecting ZAP container logs..."
-          docker logs $(docker ps -a -q --filter "ancestor=zaproxy/zap-stable")
-          echo "Inspecting ZAP container details..."
-          docker inspect $(docker ps -a -q --filter "ancestor=zaproxy/zap-stable")
+          echo "Checking ZAP container:"
+          CONTAINER_ID=$(docker ps -a -q --filter "ancestor=zaproxy/zap-stable:2.14.0")
+          if [ -n "$CONTAINER_ID" ]; then
+            echo "Container logs:"
+            docker logs $CONTAINER_ID || true
+            echo "Container inspect:"
+            docker inspect $CONTAINER_ID || true
+          else
+            echo "No ZAP container found"
+          fi
 
       - name: Shutdown Flask app
         if: always()
-        run: pkill -f "flask run"  true
+        run: pkill -f "flask run" || true
