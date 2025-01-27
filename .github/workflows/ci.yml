@@ -63,9 +63,9 @@ jobs:
     runs-on: ubuntu-latest
     services:
       zap:
-        image: ghcr.io/zaproxy/zaproxy:stable
+        image: owasp/zap2docker-stable
         ports:
-          - 8080:8080
+          - 9090:8080
         options: >-
           -e ZAP_PORT=8080
           -e ZAP_HOST=0.0.0.0
@@ -90,15 +90,11 @@ jobs:
           echo "Waiting for Flask to start..."
           curl --retry 15 --retry-delay 2 --retry-connrefused http://localhost:5000
 
-      - name: Verify local network connectivity
-        run: |
-          netstat -tulpn
-          curl -v http://localhost:5000
-
       - name: Wait for ZAP proxy readiness
         run: |
           echo "Waiting for ZAP API..."
-          until curl -sSf http://localhost:8080/JSON/core/view/version; do
+          until curl -sSf http://localhost:9090/JSON/core/view/version; do
+            echo "ZAP is not ready yet, retrying in 5 seconds..."
             sleep 5
           done
 
