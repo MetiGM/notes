@@ -63,21 +63,20 @@ jobs:
     runs-on: ubuntu-latest
     services:
       zap:
-        image: zaproxy/zap-stable
+        image: zaproxy/zap-stable:2.14.0
         ports:
           - 8080:8080
         options: >-
-          --cpus="3.0"
-          --memory="6g"
-          --health-cmd="curl -sSf http://localhost:8080/JSON/core/view/version >/dev/null || exit 1"
+          --cpus="1.0"
+          --memory="2g"
+          --health-cmd="curl -sSf http://localhost:8080/JSON/core/view/version?apikey= >/dev/null || exit 1"
           --health-interval=30s
           --health-retries=30
-          --health-start-period=900s
+          --health-start-period=300s
           -e ZAP_PORT=8080
           -e ZAP_HOST=0.0.0.0
-          -e ZAP_API_ADDR=0.0.0.0
-          -e ZAP_API_ALLOW_INTERFACE=.*
-          -e API_KEY=""
+          -e ZAP_AUTH_DISABLEKEY=true
+          -- /zap/zap.sh -daemon -host 0.0.0.0 -port 8080 -config api.disablekey=true
 
     steps:
       - uses: actions/checkout@v4
@@ -99,7 +98,7 @@ jobs:
       - name: Debug ZAP container
         run: |
           echo "Fetching ZAP container logs..."
-          CONTAINER_ID=$(docker ps -aq --filter "ancestor=owasp/zap2docker-stable")
+          CONTAINER_ID=$(docker ps -aq --filter "ancestor=zaproxy/zap-stable:2.14.0")
           if [ -n "$CONTAINER_ID" ]; then
             docker logs $CONTAINER_ID || echo "No logs available"
             docker inspect $CONTAINER_ID || echo "No inspect data available"
@@ -111,7 +110,7 @@ jobs:
         timeout-minutes: 5
         run: |
           echo "Waiting for ZAP API to become ready..."
-          curl --retry 20 --retry-delay 15 --retry-all-errors \
+          curl --retry 30 --retry-delay 10 --retry-all-errors \
             "http://localhost:8080/JSON/core/view/version"
 
       - name: Run OWASP ZAP full scan
