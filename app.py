@@ -2,14 +2,14 @@ from flask import Flask, request, render_template, redirect, url_for, flash
 from markupsafe import escape
 import sqlite3
 import os
-# from flask_wtf.csrf import CSRFProtect
+from flask_wtf.csrf import CSRFProtect
 from dotenv import load_dotenv
 
 load_dotenv()  # Loads environment variables from .env file
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY')
-# csrf = CSRFProtect(app)
+csrf = CSRFProtect(app)
 DATABASE = os.environ.get('DATABASE', 'notes.db')
 
 def init_db():

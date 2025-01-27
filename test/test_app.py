@@ -14,7 +14,7 @@ def client():
     app.secret_key = 'test-secret-key'
     app.config.update({
         'TESTING': True,
-        # 'WTF_CSRF_ENABLED': False,
+        'WTF_CSRF_ENABLED': True,
         'DATABASE': 'file:testing?mode=memory&cache=shared'  # Match workflow URI
     })
     
