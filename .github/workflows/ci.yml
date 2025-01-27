@@ -69,14 +69,16 @@ jobs:
         options: >-
           --cpus="1.0"
           --memory="2g"
-          --health-cmd="curl -sSf http://localhost:8080/JSON/core/view/version >/dev/null"
+          --health-cmd="curl -sSf http://localhost:8080/JSON/core/view/version >/dev/null || exit 1"
           --health-interval=10s
           --health-retries=20
-          --health-start-period=60s
-          -e ZAP_PORT=8080
-          -e ZAP_HOST=0.0.0.0
-          -e ZAP_AUTH_DISABLEKEY=true
-          -e ZAP_SILENT=true
+          --health-start-period=120s
+          --health-timeout=30s
+        env:
+          ZAP_PORT: 8080
+          ZAP_HOST: 0.0.0.0
+          API_DISABLEKEY: "true"
+          ZAP_SILENT: "true"
 
     steps:
       - uses: actions/checkout@v4
@@ -98,6 +100,7 @@ jobs:
 
       - name: Verify container networking
         run: |
+          echo "Checking container and network status..."
           docker ps -a
           curl -v http://localhost:8080
 
@@ -121,6 +124,7 @@ jobs:
       - name: Capture ZAP logs
         if: always()
         run: |
+          echo "Fetching ZAP logs for debugging..."
           docker logs zap 2>&1 | tee zap-logs.txt
           docker inspect zap 2>&1 | tee zap-inspect.txt
 
@@ -135,4 +139,6 @@ jobs:
 
       - name: Shutdown Flask app
         if: always()
-        run: pkill -f "flask run" || true
+        run: |
+          echo "Stopping Flask application..."
+          pkill -f "flask run" || true
