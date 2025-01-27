@@ -63,7 +63,7 @@ jobs:
     runs-on: ubuntu-latest
     services:
       zap:
-        image: docker pull ghcr.io/zaproxy/zaproxy:stable
+        image: ghcr.io/zaproxy/zaproxy:stable
 
         ports:
           - 8080:8080  # Simplified port mapping
