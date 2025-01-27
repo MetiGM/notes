@@ -63,9 +63,9 @@ jobs:
     runs-on: ubuntu-latest
     services:
       zap:
-        image: owasp/zap2docker-stable
+        image: owasp/zap2docker-weekly  # Use actively maintained weekly build
         ports:
-          - 9090:8080
+          - 8080:8080  # Simplified port mapping
         options: >-
           -e ZAP_PORT=8080
           -e ZAP_HOST=0.0.0.0
@@ -90,18 +90,16 @@ jobs:
           echo "Waiting for Flask to start..."
           curl --retry 15 --retry-delay 2 --retry-connrefused http://localhost:5000
 
-      - name: Wait for ZAP proxy readiness
+      - name: Verify ZAP container startup
         run: |
-          echo "Waiting for ZAP API..."
-          until curl -sSf http://localhost:9090/JSON/core/view/version; do
-            echo "ZAP is not ready yet, retrying in 5 seconds..."
-            sleep 5
-          done
+          docker ps -a  # Check container status
+          docker logs zap 2>&1 | tee zap-startup-logs.txt
 
       - name: Run ZAP baseline scan
         uses: zaproxy/action-baseline@v0.10.0
         with:
           target: 'http://host.docker.internal:5000'
+          zap_url: 'http://zap:8080'  # Use service name instead of localhost
           zap_options: '-silent -config api.disablekey=true'
           cmd_options: '-r zap-results.json -J'
           fail_action: false
@@ -110,7 +108,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: zap-results
-          path: zap-results.json
+          path: |
+            zap-results.json
+            zap-startup-logs.txt
 
       - name: Shutdown Flask app
         if: always()
