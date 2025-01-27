@@ -63,7 +63,7 @@ jobs:
     runs-on: ubuntu-latest
     services:
       zap:
-        image: ghcr.io/zaproxy/zaproxy:bare
+        image: ghcr.io/zaproxy/zaproxy
         ports:
           - 8080:8080
         options: >-
