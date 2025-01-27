@@ -3,18 +3,14 @@ from markupsafe import escape
 import sqlite3
 import os
 from flask_wtf.csrf import CSRFProtect
-
 from dotenv import load_dotenv
-load_dotenv()  # Loads from .env file
 
-
+load_dotenv()  # Loads environment variables from .env file
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY')
 csrf = CSRFProtect(app)
 DATABASE = os.environ.get('DATABASE', 'notes.db')
-
-app.secret_key = os.environ.get('SECRET_KEY')
 
 def init_db():
     """Initialize database with proper connection handling"""
@@ -29,8 +25,6 @@ def init_db():
             )
         ''')
         conn.commit()
-
-
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
@@ -66,11 +60,11 @@ def edit_note(note_id):
         
         if not title or not content:
             flash('Title and content are required!', 'danger')
-            return redirect(url_for('index'))
+            return redirect(url_for('edit_note', note_id=note_id))
         
         with sqlite3.connect(DATABASE, uri=True) as conn:
             conn.execute('UPDATE notes SET title=?, content=? WHERE id=?', 
-                        (title, content, note_id))
+                         (title, content, note_id))
             conn.commit()
         
         flash('Note updated successfully!', 'success')
