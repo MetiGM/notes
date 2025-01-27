@@ -9,7 +9,7 @@ load_dotenv()  # Loads environment variables from .env file
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY')
-csrf = CSRFProtect(app)
+# csrf = CSRFProtect(app)
 DATABASE = os.environ.get('DATABASE', 'notes.db')
 
 def init_db():
