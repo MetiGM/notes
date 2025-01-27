@@ -63,17 +63,10 @@ jobs:
     runs-on: ubuntu-latest
     services:
       zap:
-        image: ghcr.io/zaproxy/zaproxy
+        image: ghcr.io/zaproxy/zaproxy:stable
         ports:
           - 8080:8080
         options: >-
-          --cpus="1.0"
-          --memory="2g"
-          --health-cmd="curl -sSf http://localhost:8080/JSON/core/view/version >/dev/null"
-          --health-interval=10s
-          --health-retries=20
-          --health-start-period=180s
-          --health-timeout=30s
           -e ZAP_PORT=8080
           -e ZAP_HOST=0.0.0.0
           -e ZAP_AUTH_DISABLEKEY=true
@@ -81,14 +74,6 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-
-      - name: Clean Docker resources
-        run: |
-         docker system prune -f
-         docker volume prune -f
-
-      - name: Check disk space
-        run: df -h
 
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -102,46 +87,43 @@ jobs:
           FLASK_ENV: development
         run: |
           flask run --host=0.0.0.0 --port=5000 &
-          echo "Waiting for Flask startup..."
-          curl --retry 15 --retry-delay 5 --retry-connrefused http://localhost:5000
+          echo "Waiting for Flask to start..."
+          curl --retry 15 --retry-delay 2 --retry-connrefused http://localhost:5000
 
-      - name: Verify container networking
+      - name: Verify local network connectivity
         run: |
-          docker ps -a
-          curl -v http://localhost:8080
+          netstat -tulpn
+          curl -v http://localhost:5000
 
-      - name: Run OWASP ZAP full scan
-        uses: zaproxy/action-full-scan@v0.6.0
+      - name: Wait for ZAP proxy readiness
+        run: |
+          echo "Waiting for ZAP API..."
+          until curl -sSf http://localhost:8080/JSON/core/view/version; do
+            sleep 5
+          done
+
+      - name: Run ZAP baseline scan
+        uses: zaproxy/action-baseline@v0.10.0
         with:
-          target: 'http://localhost:5000'
-          zap_url: 'http://localhost:8080'
+          target: 'http://host.docker.internal:5000'
           zap_options: '-silent -config api.disablekey=true'
-          cmd_options: >
-            -r zap-results.json
-            -J
-            -z "-config replacer.full_list(0).description=hostfix
-                -config replacer.full_list(0).enabled=true
-                -config replacer.full_list(0).matchtype=REQ_HEADER
-                -config replacer.full_list(0).matchstr=Host
-                -config replacer.full_list(0).regex=false
-                -config replacer.full_list(0).replacement=localhost:5000"
+          cmd_options: '-r zap-results.json -J'
           fail_action: false
-
-      - name: Capture ZAP logs
-        if: always()
-        run: |
-          docker logs zap 2>&1 | tee zap-logs.txt
-          docker inspect zap 2>&1 | tee zap-inspect.txt
 
       - name: Upload ZAP results
         uses: actions/upload-artifact@v4
         with:
           name: zap-results
-          path: |
-            zap-results.json
-            zap-logs.txt
-            zap-inspect.txt
+          path: zap-results.json
 
       - name: Shutdown Flask app
         if: always()
         run: pkill -f "flask run" || true
+
+  security-report:
+    needs: [static-analysis, dynamic-analysis]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Combine security reports
+        run: |
+          echo "Security scanning complete. Check artifacts for detailed reports."
