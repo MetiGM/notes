@@ -49,7 +49,7 @@
                     {% endif %}
                 </h5>
                 <form method="POST" action="{% if note_to_edit %}/edit/{{ note_to_edit[0] }}{% else %}/{% endif %}">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <!-- <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"> -->
                     <div class="mb-3">
                         <input 
                             type="text" 
