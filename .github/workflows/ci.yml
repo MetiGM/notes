@@ -63,7 +63,7 @@ jobs:
     runs-on: ubuntu-latest
     services:
       zap:
-        image: ghcr.io/zaproxy/zaproxy:2.12.0  # Use GitHub Container Registry
+        image: ghcr.io/zaproxy/zaproxy:2.14.0  # Verified working version
         ports:
           - 8080:8080
         options: >-
@@ -98,14 +98,13 @@ jobs:
 
       - name: Verify container networking
         run: |
-          docker network ls
           docker ps -a
           curl -v http://localhost:8080
 
       - name: Run OWASP ZAP full scan
         uses: zaproxy/action-full-scan@v0.6.0
         with:
-          target: 'http://localhost:5000'  # Use direct localhost connection
+          target: 'http://localhost:5000'
           zap_url: 'http://localhost:8080'
           zap_options: '-silent -config api.disablekey=true'
           cmd_options: >
