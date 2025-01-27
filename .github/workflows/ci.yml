@@ -61,64 +61,29 @@ jobs:
   dynamic-analysis:
     needs: build-and-test
     runs-on: ubuntu-latest
-    services:
-      zap:
-        image: ghcr.io/zaproxy/zaproxy:stable
-
-        ports:
-          - 8080:8080  # Simplified port mapping
-        options: >-
-          -e ZAP_PORT=8080
-          -e ZAP_HOST=0.0.0.0
-          -e ZAP_AUTH_DISABLEKEY=true
-          -e ZAP_SILENT=true
-
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
+      - name: Set up Nikto
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y nikto
 
-      - name: Install dependencies
-        run: pip install -r requirements.txt
-
-      - name: Start Flask application
-        env:
-          SECRET_KEY: ${{ secrets.SECRET_KEY }}
-          FLASK_ENV: development
+      - name: Start the Flask app
         run: |
           flask run --host=0.0.0.0 --port=5000 &
-          echo "Waiting for Flask to start..."
-          curl --retry 15 --retry-delay 2 --retry-connrefused http://localhost:5000
+        env:
+          FLASK_ENV: development
+          SECRET_KEY: ${{ secrets.SECRET_KEY }}
+          DATABASE: ${{ env.DATABASE }}
+        shell: bash
 
-      - name: Verify ZAP container startup
+      - name: Run Nikto scan
         run: |
-          docker ps -a  # Check container status
-          docker logs zap 2>&1 | tee zap-startup-logs.txt
+          nikto -h http://127.0.0.1:5000 -o nikto-report.html
 
-      - name: Run ZAP baseline scan
-        uses: zaproxy/action-baseline@v0.10.0
-        with:
-          target: 'http://host.docker.internal:5000'
-          cmd_options: '-r zap-results.json -J'
-          fail_action: false
-
-      - name: Upload ZAP results
+      - name: Upload Nikto results
         uses: actions/upload-artifact@v4
         with:
-          name: zap-results
-          path: |
-            zap-results.json
-            zap-startup-logs.txt
-
-      - name: Shutdown Flask app
-        if: always()
-        run: pkill -f "flask run" || true
-
-  security-report:
-    needs: [static-analysis, dynamic-analysis]
-    runs-on: ubuntu-latest
-    steps:
-      - name: Combine security reports
-        run: |
-          echo "Security scanning complete. Check artifacts for detailed reports."
+          name: nikto-report
+          path: nikto-report.html
