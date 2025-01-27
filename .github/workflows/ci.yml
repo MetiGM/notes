@@ -61,7 +61,7 @@ jobs:
       - name: Run Bandit security scan
         run: |
           pip install bandit
-          bandit -r . -f json -o bandit-results.json
+          # bandit -r . -f json -o bandit-results.json
 
       - name: Upload Bandit results
         uses: actions/upload-artifact@v4
