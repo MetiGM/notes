@@ -63,20 +63,20 @@ jobs:
     runs-on: ubuntu-latest
     services:
       zap:
-        image: zaproxy/zap-stable:2.14.0
+        image: ghcr.io/zaproxy/zaproxy:2.14.0  # Use GitHub Container Registry
         ports:
           - 8080:8080
         options: >-
           --cpus="1.0"
           --memory="2g"
-          --health-cmd="curl -sSf http://localhost:8080/JSON/core/view/version?apikey= >/dev/null || exit 1"
-          --health-interval=30s
-          --health-retries=30
-          --health-start-period=300s
+          --health-cmd="curl -sSf http://localhost:8080/JSON/core/view/version >/dev/null"
+          --health-interval=10s
+          --health-retries=20
+          --health-start-period=60s
           -e ZAP_PORT=8080
           -e ZAP_HOST=0.0.0.0
           -e ZAP_AUTH_DISABLEKEY=true
-          -e ZAP_OPTIONS="-config api.disablekey=true"
+          -e ZAP_SILENT=true
 
     steps:
       - uses: actions/checkout@v4
@@ -90,38 +90,28 @@ jobs:
       - name: Start Flask application
         env:
           SECRET_KEY: ${{ secrets.SECRET_KEY }}
+          FLASK_ENV: development
         run: |
           flask run --host=0.0.0.0 --port=5000 &
           echo "Waiting for Flask startup..."
           curl --retry 15 --retry-delay 5 --retry-connrefused http://localhost:5000
 
-      - name: Debug ZAP container
+      - name: Verify container networking
         run: |
-          echo "Fetching ZAP container logs..."
-          CONTAINER_ID=$(docker ps -aq --filter "ancestor=zaproxy/zap-stable:2.14.0")
-          if [ -n "$CONTAINER_ID" ]; then
-            docker logs $CONTAINER_ID || echo "No logs available"
-            docker inspect $CONTAINER_ID || echo "No inspect data available"
-          else
-            echo "ZAP container did not start."
-          fi
-
-      - name: Verify ZAP API availability
-        timeout-minutes: 5
-        run: |
-          echo "Waiting for ZAP API to become ready..."
-          curl --retry 30 --retry-delay 10 --retry-all-errors \
-            "http://localhost:8080/JSON/core/view/version"
+          docker network ls
+          docker ps -a
+          curl -v http://localhost:8080
 
       - name: Run OWASP ZAP full scan
         uses: zaproxy/action-full-scan@v0.6.0
         with:
-          target: 'http://host.docker.internal:5000'
+          target: 'http://localhost:5000'  # Use direct localhost connection
+          zap_url: 'http://localhost:8080'
+          zap_options: '-silent -config api.disablekey=true'
           cmd_options: >
-            -j
             -r zap-results.json
-            -c "scan.rules=40012,40026"
-            -z "-config replacer.full_list(0).description=main
+            -J
+            -z "-config replacer.full_list(0).description=hostfix
                 -config replacer.full_list(0).enabled=true
                 -config replacer.full_list(0).matchtype=REQ_HEADER
                 -config replacer.full_list(0).matchstr=Host
@@ -129,11 +119,20 @@ jobs:
                 -config replacer.full_list(0).replacement=localhost:5000"
           fail_action: false
 
+      - name: Capture ZAP logs
+        if: always()
+        run: |
+          docker logs zap 2>&1 | tee zap-logs.txt
+          docker inspect zap 2>&1 | tee zap-inspect.txt
+
       - name: Upload ZAP results
         uses: actions/upload-artifact@v4
         with:
           name: zap-results
-          path: zap-results.json
+          path: |
+            zap-results.json
+            zap-logs.txt
+            zap-inspect.txt
 
       - name: Shutdown Flask app
         if: always()
