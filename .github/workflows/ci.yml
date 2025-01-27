@@ -63,7 +63,8 @@ jobs:
     runs-on: ubuntu-latest
     services:
       zap:
-        image: owasp/zap2docker-weekly  # Use actively maintained weekly build
+        image: docker pull ghcr.io/zaproxy/zaproxy:stable
+
         ports:
           - 8080:8080  # Simplified port mapping
         options: >-
@@ -99,8 +100,6 @@ jobs:
         uses: zaproxy/action-baseline@v0.10.0
         with:
           target: 'http://host.docker.internal:5000'
-          zap_url: 'http://zap:8080'  # Use service name instead of localhost
-          zap_options: '-silent -config api.disablekey=true'
           cmd_options: '-r zap-results.json -J'
           fail_action: false
 
