@@ -25,7 +25,6 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           pip install pytest-cov
-          pip install flake8
 
       - name: Run unit tests
         env:
@@ -39,16 +38,6 @@ jobs:
           name: coverage-report
           path: coverage.xml
 
-      - name: Run Flake8 linter
-        run: |
-          flake8 app.py > flake8-report.txt || true
-
-      - name: Upload Flake8 results
-        uses: actions/upload-artifact@v4
-        with:
-          name: flake8-report
-          path: flake8-report.txt
-
   static-analysis:
     needs: build-and-test
     runs-on: ubuntu-latest
@@ -57,6 +46,17 @@ jobs:
 
       - name: Set up Python
         uses: actions/setup-python@v4
+
+      - name: Run Flake8 linter
+        run: |
+          pip install flake8
+          flake8 app.py > flake8-report.txt || true
+
+      - name: Upload Flake8 results
+        uses: actions/upload-artifact@v4
+        with:
+          name: flake8-report
+          path: flake8-report.txt
 
       - name: Run Bandit security scan
         run: |
