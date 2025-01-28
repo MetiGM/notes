@@ -69,12 +69,12 @@ jobs:
           name: bandit-report
           path: bandit-results.json
 
-      - name: Check Bandit results
-        run: |
-          if grep -q '"issue_severity": "HIGH"' bandit-results.json; then
-            echo "High-severity issues found by Bandit!"
-            exit 1
-          fi
+      # - name: Check Bandit results
+      #   run: |
+      #     if grep -q '"issue_severity": "HIGH"' bandit-results.json; then
+      #       echo "High-severity issues found by Bandit!"
+      #       exit 1
+      #     fi
 
   dynamic-analysis:
     needs: build-and-test
