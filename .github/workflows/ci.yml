@@ -61,13 +61,20 @@ jobs:
       - name: Run Bandit security scan
         run: |
           pip install bandit
-          # bandit -r . -f json -o bandit-results.json
+          bandit -r . -f json -o bandit-results.json || true
 
       - name: Upload Bandit results
         uses: actions/upload-artifact@v4
         with:
           name: bandit-report
           path: bandit-results.json
+
+      - name: Check Bandit results
+        run: |
+          if grep -q '"issue_severity": "HIGH"' bandit-results.json; then
+            echo "High-severity issues found by Bandit!"
+            exit 1
+          fi
 
   dynamic-analysis:
     needs: build-and-test
@@ -88,6 +95,9 @@ jobs:
           SECRET_KEY: ${{ secrets.SECRET_KEY }}
           DATABASE: ${{ env.DATABASE }}
         shell: bash
+
+      - name: Wait for Flask app to start
+        run: sleep 10
 
       - name: Run Nikto scan
         run: |
