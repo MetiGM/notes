@@ -50,12 +50,17 @@ jobs:
       - name: Install Flake8
         run: pip install flake8
 
-      - name: Run and Upload Flake8 Results
-        run:
-          flake8 . > flake8-report.txt || true
-          echo "Uploading Flake8 results..."
-          gh run upload-artifact --name flake8-report --path flake8-report.txt
-        
+      - name: Run Flake8 Results
+        run: |
+         echo "Running Flake8 linter..."
+         flake8 . > flake8-report.txt || (echo "Flake8 errors found. Logs saved to flake8-report.txt." && cat flake8-report.txt && exit 1)
+
+      - name: Upload Flake8 Results
+        uses: actions/upload-artifact@v4
+        with: 
+          name: flake8-report
+          path: flake8-report.txt
+              
 
       - name: Run Bandit security scan
         run: |
