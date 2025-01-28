@@ -12,7 +12,7 @@ app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY')
 csrf = CSRFProtect(app)
 DATABASE = os.environ.get('DATABASE', 'notes.db')
- 
+
 
 def init_db():
     """Initialize database with proper connection handling"""
@@ -41,8 +41,13 @@ def index():
             return redirect(url_for('index'))
         
         with sqlite3.connect(DATABASE, uri=True) as conn:
-            conn.execute('INSERT INTO notes (title, content) VALUES (?, ?)', (title, content))
-            conn.commit()
+
+            # conn.execute('INSERT INTO notes (title, content) VALUES (?, ?)', (title, content))
+            # conn.commit()
+
+            query = f"INSERT INTO notes (title, content) VALUES ('{title}', '{content}')"
+            conn.execute(query)
+
         
         flash('Note saved successfully!', 'success')
         return redirect(url_for('index'))
