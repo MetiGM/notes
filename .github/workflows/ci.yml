@@ -55,12 +55,7 @@ jobs:
          echo "Running Flake8 linter..."
          flake8 . > flake8-report.txt || (echo "Flake8 errors found. Logs saved to flake8-report.txt." && cat flake8-report.txt && exit 1)
 
-      - name: Upload Flake8 Results
-        uses: actions/upload-artifact@v4
-        with: 
-          name: flake8-report
-          path: flake8-report.txt
-              
+        
 
       - name: Run Bandit security scan
         run: |
