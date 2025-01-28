@@ -5,7 +5,6 @@ import os
 from flask_wtf.csrf import CSRFProtect
 from dotenv import load_dotenv
 
-
 load_dotenv()   
 
 app = Flask(__name__)
@@ -15,7 +14,6 @@ app.secret_key = 'SECRET_KEY'
 
 csrf = CSRFProtect(app)
 DATABASE = os.environ.get('DATABASE', 'notes.db')
-
 
 def init_db():
     """Initialize database with proper connection handling"""
@@ -31,8 +29,6 @@ def init_db():
         ''')
         conn.commit()
 
-
-
 @app.route('/', methods=['GET', 'POST'])
 def index():
     if request.method == 'POST':
@@ -44,14 +40,9 @@ def index():
             return redirect(url_for('index'))
         
         with sqlite3.connect(DATABASE, uri=True) as conn:
-
-            # conn.execute('INSERT INTO notes (title, content) VALUES (?, ?)', (title, content))
-            # conn.commit()
-
             query = f"INSERT INTO notes (title, content) VALUES ('{title}', '{content}')"
             conn.execute(query)
 
-        
         flash('Note saved successfully!', 'success')
         return redirect(url_for('index'))
     
@@ -86,7 +77,7 @@ def edit_note(note_id):
         note = conn.execute('''
             SELECT id, title, content 
             FROM notes 
-            WHERE id=?
+            WHERE id=? 
         ''', (note_id,)).fetchone()
     
     if not note:
@@ -104,15 +95,15 @@ def delete_note(note_id):
     flash('Note deleted successfully!', 'success')
     return redirect(url_for('index'))
 
-
 @app.after_request
 def add_security_headers(response):
     response.headers['X-Frame-Options'] = 'DENY'
     response.headers['X-XSS-Protection'] = '1; mode=block'
     response.headers['Content-Security-Policy'] = "default-src 'self';"
+    response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'  # Enforce HTTPS
+    response.headers['Referrer-Policy'] = 'no-referrer'  # Control referrer information
+    response.headers['X-Content-Type-Options'] = 'nosniff'  # Prevent MIME sniffing
     return response
-
-
 
 if __name__ == '__main__':
     init_db()
