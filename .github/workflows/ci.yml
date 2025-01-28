@@ -62,7 +62,7 @@ jobs:
           pip install bandit
           echo "Running Bandit security scan..."
           bandit -r . -f json -o bandit-results.json || (echo "Bandit found issues. Logs saved to bandit-results.json." && cat bandit-results.json && exit 1)
-        continue-on-error: true
+        continue-on-error: false
     
 
       # - name: Check Bandit results
