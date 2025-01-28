@@ -5,15 +5,14 @@ import os
 from flask_wtf.csrf import CSRFProtect
 from dotenv import load_dotenv
 
+
 load_dotenv()  
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY')
 csrf = CSRFProtect(app)
-# DATABASE = os.environ.get('DATABASE', 'notes.db')
-
-DATABASE = "notes.db"
-print(f"Using database: {DATABASE}")  
+DATABASE = os.environ.get('DATABASE', 'notes.db')
+ 
 
 def init_db():
     """Initialize database with proper connection handling"""
@@ -28,6 +27,8 @@ def init_db():
             )
         ''')
         conn.commit()
+
+unused_var = "I am not used"
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
