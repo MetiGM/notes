@@ -98,12 +98,13 @@ def delete_note(note_id):
 @app.after_request
 def add_security_headers(response):
     response.headers['X-Frame-Options'] = 'DENY'
-    response.headers['X-XSS-Protection'] = '1; mode=block'
+    response.headers['X-XSS-Protection'] = '1; mode=block'  # Enable XSS protection
     response.headers['Content-Security-Policy'] = "default-src 'self';"
     response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'  # Enforce HTTPS
     response.headers['Referrer-Policy'] = 'no-referrer'  # Control referrer information
     response.headers['X-Content-Type-Options'] = 'nosniff'  # Prevent MIME sniffing
     return response
+
 
 if __name__ == '__main__':
     init_db()
