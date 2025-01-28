@@ -39,13 +39,13 @@ def index():
             flash('Title and content are required!', 'danger')
             return redirect(url_for('index'))
         
-        # conn.execute('INSERT INTO notes (title, content) VALUES (?, ?)', (title, content))
-        # conn.commit()
+        conn.execute('INSERT INTO notes (title, content) VALUES (?, ?)', (title, content))
+        conn.commit()
 
         
-        with sqlite3.connect(DATABASE, uri=True) as conn:
-            query = f"INSERT INTO notes (title, content) VALUES ('{title}', '{content}')"
-            conn.execute(query)
+        # with sqlite3.connect(DATABASE, uri=True) as conn:
+        #     query = f"INSERT INTO notes (title, content) VALUES ('{title}', '{content}')"
+        #     conn.execute(query)
 
         flash('Note saved successfully!', 'success')
         return redirect(url_for('index'))
