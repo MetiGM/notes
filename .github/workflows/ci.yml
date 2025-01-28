@@ -50,8 +50,8 @@ jobs:
       - name: Run Flake8 linter
         run: |
           pip install flake8
-          flake8 . > flake8-report.txt || true
-        continue-on-error: false
+          flake8 . > flake8-report.txt
+        
 
 
       - name: Upload Flake8 results
@@ -63,7 +63,7 @@ jobs:
       - name: Run Bandit security scan
         run: |
           pip install bandit
-          bandit -r . -f json -o bandit-results.json || true
+          bandit -r . -f json -o bandit-results.json
 
       - name: Upload Bandit results
         uses: actions/upload-artifact@v4
