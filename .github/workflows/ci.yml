@@ -82,6 +82,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install flask  # Ensure Flask is installed
+
       - name: Set up Nikto
         run: |
           sudo apt-get update
@@ -101,6 +112,7 @@ jobs:
           flask run --host=0.0.0.0 --port=5000 > flask.log 2>&1 &
           echo "Flask app started in the background."
         env:
+          FLASK_APP: ${{ env.FLASK_APP }}  # Ensure FLASK_APP is set
           FLASK_ENV: development
           SECRET_KEY: ${{ secrets.SECRET_KEY }}
           DATABASE: ${{ env.DATABASE }}
