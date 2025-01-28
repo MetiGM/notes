@@ -97,7 +97,7 @@ jobs:
         shell: bash
 
       - name: Wait for Flask app to start
-        run: sleep 10
+        run: sleep 30
 
       - name: Run Nikto scan
         run: |
