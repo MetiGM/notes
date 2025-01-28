@@ -60,13 +60,10 @@ jobs:
       - name: Run Bandit security scan
         run: |
           pip install bandit
-          bandit -r . -f json -o bandit-results.json
+          echo "Running Bandit security scan..."
+          bandit -r . -f json -o bandit-results.json || (echo "Bandit found issues. Logs saved to bandit-results.json." && cat bandit-results.json && exit 1)
 
-      - name: Upload Bandit results
-        uses: actions/upload-artifact@v4
-        with:
-          name: bandit-report
-          path: bandit-results.json
+    
 
       # - name: Check Bandit results
       #   run: |
