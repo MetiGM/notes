@@ -43,10 +43,10 @@ def index():
 
         
         with sqlite3.connect(DATABASE, uri=True) as conn:
-            conn.execute('INSERT INTO notes (title, content) VALUES (?, ?)', (title, content))
-            conn.commit()
-        #     query = f"INSERT INTO notes (title, content) VALUES ('{title}', '{content}')"
-        #     conn.execute(query)
+            # conn.execute('INSERT INTO notes (title, content) VALUES (?, ?)', (title, content))
+            # conn.commit()
+            query = f"INSERT INTO notes (title, content) VALUES ('{title}', '{content}')"
+            conn.execute(query)
 
         flash('Note saved successfully!', 'success')
         return redirect(url_for('index'))
