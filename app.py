@@ -104,6 +104,16 @@ def delete_note(note_id):
     flash('Note deleted successfully!', 'success')
     return redirect(url_for('index'))
 
+
+@app.after_request
+def add_security_headers(response):
+    response.headers['X-Frame-Options'] = 'DENY'
+    response.headers['X-XSS-Protection'] = '1; mode=block'
+    response.headers['Content-Security-Policy'] = "default-src 'self';"
+    return response
+
+
+
 if __name__ == '__main__':
     init_db()
     app.run(debug=os.environ.get('FLASK_DEBUG', 'false').lower() == 'true')
