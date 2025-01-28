@@ -5,12 +5,15 @@ import os
 from flask_wtf.csrf import CSRFProtect
 from dotenv import load_dotenv
 
-load_dotenv()  # Loads environment variables from .env file
+load_dotenv()  
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY')
 csrf = CSRFProtect(app)
-DATABASE = os.environ.get('DATABASE', 'notes.db')
+# DATABASE = os.environ.get('DATABASE', 'notes.db')
+
+DATABASE = "notes.db"
+print(f"Using database: {DATABASE}")  
 
 def init_db():
     """Initialize database with proper connection handling"""
