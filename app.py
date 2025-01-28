@@ -9,7 +9,10 @@ from dotenv import load_dotenv
 load_dotenv()   
 
 app = Flask(__name__)
-app.secret_key = os.environ.get('SECRET_KEY')
+
+# app.secret_key = os.environ.get('SECRET_KEY')
+app.secret_key = 'SECRET_KEY'
+
 csrf = CSRFProtect(app)
 DATABASE = os.environ.get('DATABASE', 'notes.db')
 
