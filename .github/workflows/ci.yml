@@ -87,7 +87,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-          pip install flask  # Ensure Flask is installed
+          pip install flask  
 
       - name: Set up Nikto
         run: |
