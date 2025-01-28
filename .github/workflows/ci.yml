@@ -97,7 +97,10 @@ jobs:
         shell: bash
 
       - name: Wait for Flask app to start
-        run: sleep 30
+        run: |
+          until curl -s http://127.0.0.1:5000 > /dev/null; do
+            sleep 5
+          done
 
       - name: Run Nikto scan
         run: |
