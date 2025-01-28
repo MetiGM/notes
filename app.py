@@ -28,7 +28,7 @@ def init_db():
         ''')
         conn.commit()
 
-unused_var
+
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
