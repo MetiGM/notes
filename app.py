@@ -39,6 +39,10 @@ def index():
             flash('Title and content are required!', 'danger')
             return redirect(url_for('index'))
         
+        # conn.execute('INSERT INTO notes (title, content) VALUES (?, ?)', (title, content))
+        # conn.commit()
+
+        
         with sqlite3.connect(DATABASE, uri=True) as conn:
             query = f"INSERT INTO notes (title, content) VALUES ('{title}', '{content}')"
             conn.execute(query)
@@ -98,11 +102,11 @@ def delete_note(note_id):
 @app.after_request
 def add_security_headers(response):
     response.headers['X-Frame-Options'] = 'DENY'
-    response.headers['X-XSS-Protection'] = '1; mode=block'  # Enable XSS protection
+    response.headers['X-XSS-Protection'] = '1; mode=block'  
     response.headers['Content-Security-Policy'] = "default-src 'self';"
-    response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'  # Enforce HTTPS
-    response.headers['Referrer-Policy'] = 'no-referrer'  # Control referrer information
-    response.headers['X-Content-Type-Options'] = 'nosniff'  # Prevent MIME sniffing
+    response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains' 
+    response.headers['Referrer-Policy'] = 'no-referrer'  
+    response.headers['X-Content-Type-Options'] = 'nosniff'  
     return response
 
 
