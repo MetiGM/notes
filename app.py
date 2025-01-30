@@ -4,6 +4,8 @@ import sqlite3
 import os
 from flask_wtf.csrf import CSRFProtect
 from dotenv import load_dotenv
+from flask import Flask, render_template
+
 
 load_dotenv()   
 
@@ -39,7 +41,7 @@ def index():
             flash('Title and content are required!', 'danger')
             return redirect(url_for('index'))
         
-        
+
 
         
         with sqlite3.connect(DATABASE, uri=True) as conn:

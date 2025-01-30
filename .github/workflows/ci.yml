@@ -108,7 +108,7 @@ jobs:
           flask run --host=0.0.0.0 --port=5000 > flask.log 2>&1 &
           echo "Flask app started in the background."
         env:
-          FLASK_APP: ${{ env.FLASK_APP }}  # Ensure FLASK_APP is set
+          FLASK_APP: ${{ env.FLASK_APP }}  
           FLASK_ENV: development
           SECRET_KEY: ${{ secrets.SECRET_KEY }}
           DATABASE: ${{ env.DATABASE }}
