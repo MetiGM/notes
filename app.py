@@ -5,7 +5,7 @@ import os
 from flask_wtf.csrf import CSRFProtect
 from dotenv import load_dotenv
 from flask import Flask, render_template
-
+from flask_bootstrap import Bootstrap
 
 load_dotenv()   
 
